@@ -1,5 +1,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* hidden должен скрывать элемент даже если у него задан display во flex-классах */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #f3f5f7;
   --card: #ffffff;

@@ -4,6 +4,17 @@
 --  Скрипт можно запускать повторно — он не ломает существующие данные.
 -- ============================================================
 
+-- ---------- Служебная таблица миграций Supabase ----------
+-- В некоторых проектах её нет, и SQL Editor падает с ошибкой
+-- 'relation "supabase_migrations.schema_migrations" does not exist'.
+-- Эти строки создают её, если она отсутствует.
+create schema if not exists supabase_migrations;
+create table if not exists supabase_migrations.schema_migrations (
+  version    text not null primary key,
+  statements text[],
+  name       text
+);
+
 -- ---------- Таблица записей дневника ----------
 create table if not exists public.entries (
   id              uuid primary key default gen_random_uuid(),
