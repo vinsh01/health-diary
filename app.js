@@ -57,8 +57,13 @@ async function signIn() {
   const password = $('password').value;
   if (!email || !password) { authMsg('Заполни email и пароль'); return; }
   authMsg('Вход…', true);
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  if (error) authMsg(translateAuthError(error));
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) authMsg(translateAuthError(error));
+  } catch (e) {
+    console.error(e);
+    authMsg('Нет связи с Supabase — проверь SUPABASE_URL и ключ в config.js');
+  }
 }
 async function signUp() {
   const email = $('email').value.trim();
@@ -66,12 +71,17 @@ async function signUp() {
   if (!email || !password) { authMsg('Заполни email и пароль'); return; }
   if (password.length < 6) { authMsg('Пароль минимум 6 символов'); return; }
   authMsg('Создаём аккаунт…', true);
-  const { data: res, error } = await db.auth.signUp({ email, password });
-  if (error) { authMsg(translateAuthError(error)); return; }
-  if (res && res.session) {
-    authMsg('Аккаунт создан', true);   // onAuthStateChange покажет дневник
-  } else {
-    authMsg('Аккаунт создан. Подтверди email по ссылке из письма, затем нажми «Войти».', true);
+  try {
+    const { data: res, error } = await db.auth.signUp({ email, password });
+    if (error) { authMsg(translateAuthError(error)); return; }
+    if (res && res.session) {
+      authMsg('Аккаунт создан', true);   // onAuthStateChange покажет дневник
+    } else {
+      authMsg('Аккаунт создан. Подтверди email по ссылке из письма, затем нажми «Войти».', true);
+    }
+  } catch (e) {
+    console.error(e);
+    authMsg('Нет связи с Supabase — проверь SUPABASE_URL и ключ в config.js');
   }
 }
 async function signOut() {
@@ -374,10 +384,15 @@ function init() {
   bindEvents();
   $('entryDate').value = todayStr();
 
-  if (typeof SUPABASE_URL !== 'string' || SUPABASE_URL.includes('ВСТАВЬ') ||
-      typeof SUPABASE_ANON_KEY !== 'string' || SUPABASE_ANON_KEY.includes('ВСТАВЬ')) {
+  const urlOk = typeof SUPABASE_URL === 'string' &&
+    SUPABASE_URL.startsWith('https://') && SUPABASE_URL.includes('.supabase.co');
+  const keyOk = typeof SUPABASE_ANON_KEY === 'string' &&
+    SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes('ВСТАВЬ');
+  if (!urlOk || !keyOk) {
     $('loadingView').innerHTML =
-      '<p class="muted">Не заполнен config.js — впиши туда Project URL и anon key из Supabase.</p>';
+      '<p class="muted">config.js заполнен неверно.<br>' +
+      'SUPABASE_URL — адрес вида https://xxxxx.supabase.co<br>' +
+      'SUPABASE_ANON_KEY — ключ, начинается с sb_publishable_</p>';
     return;
   }
 
