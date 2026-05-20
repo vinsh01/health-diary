@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e9f8e">
+<title>Дневник здоровья</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="loadingView" class="center-view">
+  <p class="muted">Загрузка…</p>
+</div>
+
+<div id="authView" class="center-view" hidden>
+  <div class="auth-card">
+    <h1>Дневник здоровья</h1>
+    <p class="sub">Войди, чтобы вести дневник</p>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="password">Пароль</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="минимум 6 символов">
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="actions">
+      <button class="btn primary" id="signInBtn">Войти</button>
+      <button class="btn ghost" id="signUpBtn">Регистрация</button>
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="app" hidden>
+  <header class="topbar">
+    <div>
+      <h1>Дневник здоровья</h1>
+      <p class="sub">Записывай день — вечером Claude разберёт показатели</p>
+    </div>
+    <div class="user-box">
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn small ghost" id="signOutBtn">Выйти</button>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>🌅 Утро</h2>
+    <div class="field wide">
+      <label for="entryDate">Дата</label>
+      <div class="date-row">
+        <input type="date" id="entryDate">
+        <button class="btn ghost" id="todayBtn">Сегодня</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="wakeTime">Время подъёма</label>
+        <input type="time" id="wakeTime">
+      </div>
+      <div class="field">
+        <label for="glucoseMorning">Глюкоза утром, ммоль/л</label>
+        <input type="number" id="glucoseMorning" step="0.1" min="0" placeholder="напр. 5.2">
+      </div>
+    </div>
+    <div class="field wide">
+      <label>Скриншот утренней ВСР</label>
+      <div class="hrv-zone" id="hrvZone" tabindex="0">
+        <div class="hrv-empty" id="hrvEmpty">Вставь скриншот (Ctrl+V) или нажми, чтобы выбрать файл</div>
+        <img class="hrv-preview" id="hrvPreview" alt="ВСР" hidden>
+        <button type="button" class="hrv-remove" id="hrvRemove" hidden>Убрать скриншот</button>
+      </div>
+      <input type="file" id="hrvInput" accept="image/*" hidden>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🍽 Питание</h2>
+    <div class="field wide">
+      <label for="breakfast">Завтрак</label>
+      <textarea id="breakfast" rows="2" placeholder="что ел на завтрак"></textarea>
+    </div>
+    <div class="field wide">
+      <label for="lunch">Обед</label>
+      <textarea id="lunch" rows="2" placeholder="что ел на обед"></textarea>
+    </div>
+    <div class="field wide">
+      <label for="dinner">Ужин</label>
+      <textarea id="dinner" rows="2" placeholder="что ел на ужин"></textarea>
+    </div>
+    <div class="field wide">
+      <label for="snacks">Перекусы</label>
+      <textarea id="snacks" rows="2" placeholder="перекусы в течение дня"></textarea>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>💊 День</h2>
+    <div class="field wide">
+      <label for="medications">Лекарства и БАДы</label>
+      <textarea id="medications" rows="2" placeholder="что принимал сегодня"></textarea>
+    </div>
+    <div class="field wide">
+      <label for="workout">Тренировка</label>
+      <textarea id="workout" rows="2" placeholder="что делал, объём, ощущения"></textarea>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🌙 Вечер</h2>
+    <div class="field">
+      <label for="bedTime">Время отбоя</label>
+      <input type="time" id="bedTime">
+    </div>
+    <div class="field wide">
+      <label for="notes">Заметки о дне</label>
+      <textarea id="notes" rows="3" placeholder="как прошёл день, события, самочувствие, мысли"></textarea>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="saveBtn">Сохранить запись</button>
+    <button class="btn ghost" id="exportBtn">Экспорт JSON</button>
+  </div>
+
+  <section class="card history-card">
+    <h2>История <span class="count" id="entryCount"></span></h2>
+    <div id="historyList" class="history-list"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
