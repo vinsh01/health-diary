@@ -344,6 +344,104 @@ async function exportJson() {
   }
 }
 
+/* ---------- отчёты (разбор от Claude) ---------- */
+let currentReportPeriod = null;
+
+const REPORT_LABELS = { yesterday: 'за вчера', week: 'за 7 дней', month: 'за месяц' };
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function inlineMd(s) {
+  let t = escapeHtml(s);
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  return t;
+}
+// Минимальный Markdown → HTML: заголовки, списки, абзацы, жирный/курсив/код.
+function renderMarkdown(md) {
+  const lines = String(md || '').split('\n');
+  let html = '';
+  let list = null;
+  const closeList = () => { if (list) { html += '</' + list + '>'; list = null; } };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { closeList(); continue; }
+    let m;
+    if ((m = line.match(/^(#{1,6})\s+(.*)$/))) {
+      closeList();
+      const lvl = Math.min(m[1].length + 2, 6);
+      html += '<h' + lvl + '>' + inlineMd(m[2]) + '</h' + lvl + '>';
+    } else if ((m = line.match(/^[-*•]\s+(.*)$/))) {
+      if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; }
+      html += '<li>' + inlineMd(m[1]) + '</li>';
+    } else if ((m = line.match(/^\d+[.)]\s+(.*)$/))) {
+      if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; }
+      html += '<li>' + inlineMd(m[1]) + '</li>';
+    } else {
+      closeList();
+      html += '<p>' + inlineMd(line) + '</p>';
+    }
+  }
+  closeList();
+  return html;
+}
+
+function setReportLoading(on) {
+  document.querySelectorAll('#reportButtons .btn').forEach((b) => { b.disabled = on; });
+  const refresh = $('reportRefresh');
+  if (refresh) refresh.disabled = on;
+}
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function requestReport(period, force) {
+  const { data: sess } = await db.auth.getSession();
+  const token = sess && sess.session && sess.session.access_token;
+  if (!token) throw new Error('Сессия истекла — войди заново');
+  const res = await fetch(SUPABASE_URL + '/functions/v1/generate-report', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ period: period, force: !!force }),
+  });
+  let body = {};
+  try { body = await res.json(); } catch (e) { /* пустой ответ */ }
+  if (!res.ok) throw new Error(body.error || ('Ошибка сервера (' + res.status + ')'));
+  return body;
+}
+
+async function showReport(period, force) {
+  currentReportPeriod = period;
+  setReportLoading(true);
+  $('reportMeta').hidden = true;
+  $('reportBody').innerHTML =
+    '<p class="report-loading muted">Claude анализирует данные' + (force ? ' заново' : '') + '…</p>';
+  try {
+    const r = await requestReport(period, force);
+    $('reportBody').innerHTML = renderMarkdown(r.content);
+    const parts = ['Разбор ' + (REPORT_LABELS[period] || period)];
+    if (r.createdAt) parts.push(fmtDateTime(r.createdAt));
+    parts.push(r.cached ? 'из кэша' : 'свежий');
+    $('reportMetaText').textContent = parts.join('  ·  ');
+    $('reportMeta').hidden = false;
+  } catch (e) {
+    console.error(e);
+    $('reportBody').innerHTML =
+      '<p class="report-error">' + escapeHtml(e.message || 'Не удалось получить отчёт') + '</p>';
+  } finally {
+    setReportLoading(false);
+  }
+}
+
 /* ---------- init ---------- */
 function bindEvents() {
   $('signInBtn').addEventListener('click', signIn);
@@ -355,6 +453,13 @@ function bindEvents() {
   $('todayBtn').addEventListener('click', () => loadEntryForDate(todayStr()));
   $('saveBtn').addEventListener('click', saveEntry);
   $('exportBtn').addEventListener('click', exportJson);
+
+  document.querySelectorAll('#reportButtons .btn').forEach((b) => {
+    b.addEventListener('click', () => showReport(b.dataset.period, false));
+  });
+  $('reportRefresh').addEventListener('click', () => {
+    if (currentReportPeriod) showReport(currentReportPeriod, true);
+  });
 
   $('hrvZone').addEventListener('click', (e) => {
     if (e.target.id === 'hrvRemove') return;

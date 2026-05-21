@@ -172,6 +172,34 @@ textarea { resize: vertical; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- отчёты (разбор от Claude) ---------- */
+.report-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.report-buttons .btn { flex: 1; min-width: 110px; }
+
+.report-meta {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 12px; color: var(--muted);
+}
+.report-meta #reportRefresh { margin-left: auto; }
+
+.report-loading { font-size: 14px; }
+.report-error { color: var(--danger); font-size: 14px; }
+
+.report-body:empty { display: none; }
+.report-body > * + * { margin-top: 8px; }
+.report-body h3, .report-body h4, .report-body h5, .report-body h6 {
+  font-size: 15px; font-weight: 650;
+}
+.report-body p, .report-body li { font-size: 14px; }
+.report-body ul, .report-body ol {
+  padding-left: 22px; display: flex; flex-direction: column; gap: 4px;
+}
+.report-body strong { font-weight: 650; }
+.report-body code {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px; font-size: 13px;
+}
+
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
   .topbar { flex-direction: column; }

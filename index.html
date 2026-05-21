@@ -124,6 +124,21 @@
     <button class="btn ghost" id="exportBtn">Экспорт JSON</button>
   </div>
 
+  <section class="card report-card">
+    <h2>📊 Разбор от Claude</h2>
+    <p class="sub">Claude прочитает записи за период и разберёт показатели</p>
+    <div class="report-buttons" id="reportButtons">
+      <button class="btn ghost" data-period="yesterday">За вчера</button>
+      <button class="btn ghost" data-period="week">За 7 дней</button>
+      <button class="btn ghost" data-period="month">За месяц</button>
+    </div>
+    <div class="report-meta" id="reportMeta" hidden>
+      <span id="reportMetaText"></span>
+      <button class="btn small ghost" id="reportRefresh">Обновить</button>
+    </div>
+    <div class="report-body" id="reportBody"></div>
+  </section>
+
   <section class="card history-card">
     <h2>История <span class="count" id="entryCount"></span></h2>
     <div id="historyList" class="history-list"></div>
